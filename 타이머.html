@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>사용자 입력 타이머</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 100px;
+    }
+    #timer {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 60px;
+      font-size: 20px;
+      text-align: center;
+    }
+    button {
+      font-size: 18px;
+      padding: 8px 16px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <label>분: <input type="number" id="inputMinutes" value="1" min="0"></label>
+    <label>초: <input type="number" id="inputSeconds" value="0" min="0" max="59"></label>
+  </div>
+</br></br>
+
+  <div id="timer">00:00</div>
+
+  <button onclick="startTimer()">시작</button>
+  <button onclick="stopTimer()">중지</button>
+
+  <script>
+    let totalSeconds = 0;
+    let timerInterval = null;
+
+    function updateDisplay() {
+      const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const secs = String(totalSeconds % 60).padStart(2, '0');
+      document.getElementById('timer').textContent = `${mins}:${secs}`;
+    }
+
+    function startTimer() {
+      // 입력값에서 시작 시간 설정
+      const inputMin = parseInt(document.getElementById("inputMinutes").value, 10) || 0;
+      const inputSec = parseInt(document.getElementById("inputSeconds").value, 10) || 0;
+      totalSeconds = inputMin * 60 + inputSec;
+
+      if (timerInterval !== null) return; // 이미 작동 중이면 무시
+
+      updateDisplay(); // 시작 전 표시
+      timerInterval = setInterval(() => {
+        totalSeconds++;
+        updateDisplay();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  </script>
+</body>
+</html>
