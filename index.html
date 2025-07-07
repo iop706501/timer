@@ -1,61 +1,270 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>사용자 입력 타이머</title>
+  <meta charset="UTF-8" />
+  <title>경기 타이머</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin-top: 100px;
+      margin-top: 40px;
+      transition: color 0.3s;
     }
-    #timer {
-      font-size: 48px;
+
+    #topContainer {
+      transition: background-color 0.3s;
+      padding-top: 20px;
+      padding-bottom: 10px;
+    }
+
+    .title-container {
+      margin-top: 10px;
+      margin-bottom: var(--titleScoreboardGap, 30px);
+    }
+
+    #titleInput {
+      font-size: 30px;
+      border: none;
+      background: transparent;
+      outline: none;
+      text-align: center;
+      width: 80%;
+    }
+
+    .scoreboard {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
       margin-bottom: 20px;
     }
-    input {
-      width: 60px;
-      font-size: 20px;
+
+    #team1, #score1, #timer, #score2, #team2 {
+      flex-shrink: 0;
+    }
+
+    #timer {
+      font-size: 48px;
+      min-width: 140px;
       text-align: center;
     }
+
+    input[type="text"], input[type="number"] {
+      background-color: transparent;
+      border: none;
+      outline: none;
+      text-align: center;
+    }
+
+    input.score {
+      width: 120px;
+    }
+
+    input.score::-webkit-outer-spin-button,
+    input.score::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input.team {
+      width: 500px;
+    }
+
+    input.time {
+      width: 70px;
+      margin: 0 5px;
+      padding: 4px;
+      border: 1px solid #999;
+      border-radius: 4px;
+      background-color: white;
+    }
+
+    .controls {
+      margin-top: 100px;
+      font-size: 16px;
+    }
+
+    .customization {
+      margin-top: 40px;
+      font-size: 16px;
+    }
+
     button {
       font-size: 18px;
-      padding: 8px 16px;
+      padding: 6px 14px;
       margin: 5px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #f8f8f8;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #e0e0e0;
+    }
+
+    input[type="range"] {
+      width: 200px;
+    }
+
+    .custom-row {
+      margin-top: 15px;
+    }
+
+    #team1 {
+      margin-right: var(--teamTimerGap, 40px);
+      text-align: right;
+    }
+
+    #team2 {
+      margin-left: var(--teamTimerGap, 40px);
+      text-align: left;
+    }
+
+    #score1 {
+      margin-right: var(--scoreTimerGap, 20px);
+    }
+
+    #score2 {
+      margin-left: var(--scoreTimerGap, 20px);
+    }
+
+    .bold {
+      font-weight: bold !important;
     }
   </style>
 </head>
 <body>
-  <div>
-    <label>분: <input type="number" id="inputMinutes" value="1" min="0"></label>
-    <label>초: <input type="number" id="inputSeconds" value="0" min="0" max="59"></label>
+
+  <div id="topContainer">
+    <div class="title-container">
+      <input type="text" id="titleInput" placeholder="제목" />
+    </div>
+
+    <div class="scoreboard">
+      <input type="text" id="team1" class="team" placeholder="팀이름1" maxlength="20" />
+      <input type="text" id="score1" class="score" placeholder="0" />
+      <div id="timer">00:00</div>
+      <input type="text" id="score2" class="score" placeholder="0" />
+      <input type="text" id="team2" class="team" placeholder="팀이름2" maxlength="20" />
+    </div>
   </div>
-</br></br>
 
-  <div id="timer">00:00</div>
+  <div class="controls">
+    <label>분: <input type="number" id="inputMinutes" class="time" value="0" min="0"></label>
+    <label>초: <input type="number" id="inputSeconds" class="time" value="0" min="0" max="59"></label>
+    <button onclick="startTimer()">시작</button>
+    <button onclick="stopTimer()">중지</button>
+    <button onclick="resetTimer()">초기화</button>
+  </div>
 
-  <button onclick="startTimer()">시작</button>
-  <button onclick="stopTimer()">중지</button>
+  <div class="customization">
+    <div class="custom-row">
+      <strong>제목 크기:</strong>
+      <input id="titleFontRange" type="range" min="0" max="100" value="30" oninput="changeTitleFontSize(this.value)" />
+      <span id="titleFontValue">30</span>px
+      &nbsp;&nbsp;
+      <strong>제목 색상:</strong>
+      <input type="color" id="titleColorPicker" onchange="changeTitleColor(this.value)">
+      &nbsp;&nbsp;
+      <label><input type="checkbox" id="titleBold" onchange="toggleBold('titleInput', this.checked)"> 굵게</label>
+    </div>
+
+    <div class="custom-row">
+      <strong>팀 크기:</strong>
+      <input id="teamFontRange" type="range" min="0" max="100" value="30" oninput="changeTeamFontSize(this.value)" />
+      <span id="teamFontValue">30</span>px
+      &nbsp;&nbsp;
+      <strong>팀 색상:</strong>
+      <input type="color" id="teamColorPicker" onchange="changeTeamTextColor(this.value)">
+      &nbsp;&nbsp;
+      <label><input type="checkbox" id="teamBold" onchange="toggleBoldClass('team', this.checked)"> 굵게</label>
+    </div>
+
+    <div class="custom-row">
+      <strong>점수 크기:</strong>
+      <input id="scoreFontRange" type="range" min="0" max="100" value="30" oninput="changeScoreFontSize(this.value)" />
+      <span id="scoreFontValue">30</span>px
+      &nbsp;&nbsp;
+      <strong>점수 색상:</strong>
+      <input type="color" id="scoreColorPicker" onchange="changeScoreTextColor(this.value)">
+      &nbsp;&nbsp;
+      <label><input type="checkbox" id="scoreBold" onchange="toggleBoldClass('score', this.checked)"> 굵게</label>
+    </div>
+
+    <div class="custom-row">
+      <strong>타이머 크기:</strong>
+      <input id="timerFontRange" type="range" min="0" max="100" value="30" oninput="changeTimerFontSize(this.value)" />
+      <span id="timerFontValue">30</span>px
+      &nbsp;&nbsp;
+      <strong>타이머 색상:</strong>
+      <input type="color" id="timerColorPicker" onchange="changeTimerTextColor(this.value)">
+      &nbsp;&nbsp;
+      <label><input type="checkbox" id="timerBold" onchange="toggleBold('timer', this.checked)"> 굵게</label>
+    </div>
+
+    <div class="custom-row">
+      <strong>팀과 타이머 사이 간격:</strong>
+      <input id="teamTimerGapRange" type="range" min="-30" max="250" value="30" oninput="changeTeamTimerGap(this.value)" />
+      <span id="teamTimerGapValue">30</span>px
+    </div>
+
+    <div class="custom-row">
+      <strong>점수와 타이머 사이 간격:</strong>
+      <input id="scoreTimerGapRange" type="range" min="-60" max="150" value="0" oninput="changeScoreTimerGap(this.value)" />
+      <span id="scoreTimerGapValue">0</span>px
+    </div>
+
+    <div class="custom-row">
+      <strong>제목과 점수판 사이 간격:</strong>
+      <input id="titleScoreGapRange" type="range" min="0" max="150" value="30" oninput="changeTitleScoreGap(this.value)" />
+      <span id="titleScoreGapValue">30</span>px
+    </div>
+
+    <div class="custom-row">
+      <strong>전체 글자 색상:</strong>
+      <input type="color" id="allColorPicker" onchange="changeAllTextColor(this.value)">
+      &nbsp;&nbsp;
+      <strong>배경색:</strong>
+      <input type="color" id="bgColorPicker" onchange="changeBackgroundColor(this.value)">
+      &nbsp;&nbsp;
+      <strong>글꼴:</strong>
+      <select id="fontSelector" onchange="changeFontFamily(this.value)">
+        <option value="Arial">Arial</option>
+        <option value="Verdana">Verdana</option>
+        <option value="Tahoma">Tahoma</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Gulim">Gulim</option>
+        <option value="Malgun Gothic">Malgun Gothic</option>
+        <option value="Nanum Gothic">Nanum Gothic</option>
+      </select>
+      &nbsp;&nbsp;
+      <label><input type="checkbox" id="boldToggle" onchange="toggleAllBold()"> 전체 굵게</label>
+    </div>
+
+    <div class="custom-row">
+      <button onclick="resetAll()">설정 전체 리셋</button>
+    </div>
+  </div>
 
   <script>
     let totalSeconds = 0;
     let timerInterval = null;
 
     function updateDisplay() {
-      const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-      const secs = String(totalSeconds % 60).padStart(2, '0');
-      document.getElementById('timer').textContent = `${mins}:${secs}`;
+      const mins = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+      const secs = String(totalSeconds % 60).padStart(2, "0");
+      document.getElementById("timer").textContent = `${mins}:${secs}`;
     }
 
     function startTimer() {
-      // 입력값에서 시작 시간 설정
-      const inputMin = parseInt(document.getElementById("inputMinutes").value, 10) || 0;
-      const inputSec = parseInt(document.getElementById("inputSeconds").value, 10) || 0;
-      totalSeconds = inputMin * 60 + inputSec;
-
-      if (timerInterval !== null) return; // 이미 작동 중이면 무시
-
-      updateDisplay(); // 시작 전 표시
+      if (timerInterval !== null) return;
+      const min = parseInt(document.getElementById("inputMinutes").value, 10) || 0;
+      const sec = parseInt(document.getElementById("inputSeconds").value, 10) || 0;
+      if (totalSeconds === 0) totalSeconds = min * 60 + sec;
+      updateDisplay();
       timerInterval = setInterval(() => {
         totalSeconds++;
         updateDisplay();
@@ -66,6 +275,151 @@
       clearInterval(timerInterval);
       timerInterval = null;
     }
+
+    function resetTimer() {
+      stopTimer();
+      totalSeconds = 0;
+      updateDisplay();
+    }
+
+    function changeTitleFontSize(size) {
+      document.getElementById("titleInput").style.fontSize = size + "px";
+      document.getElementById("titleFontValue").textContent = size;
+    }
+
+    function changeTimerFontSize(size) {
+      document.getElementById("timer").style.fontSize = size + "px";
+      document.getElementById("timerFontValue").textContent = size;
+    }
+
+    function changeTeamFontSize(size) {
+      document.querySelectorAll(".team").forEach(el => el.style.fontSize = size + "px");
+      document.getElementById("teamFontValue").textContent = size;
+    }
+
+    function changeScoreFontSize(size) {
+      document.querySelectorAll(".score").forEach(el => el.style.fontSize = size + "px");
+      document.getElementById("scoreFontValue").textContent = size;
+    }
+
+    function changeTeamTimerGap(value) {
+      document.documentElement.style.setProperty("--teamTimerGap", value + "px");
+      document.getElementById("teamTimerGapValue").textContent = value;
+    }
+
+    function changeScoreTimerGap(value) {
+      document.documentElement.style.setProperty("--scoreTimerGap", value + "px");
+      document.getElementById("scoreTimerGapValue").textContent = value;
+    }
+
+    function changeTitleScoreGap(value) {
+      document.documentElement.style.setProperty("--titleScoreboardGap", value + "px");
+      document.getElementById("titleScoreGapValue").textContent = value;
+    }
+
+    function changeAllTextColor(color) {
+      changeTitleColor(color);
+      changeTeamTextColor(color);
+      changeScoreTextColor(color);
+      changeTimerTextColor(color);
+    }
+
+    function changeTitleColor(color) {
+      document.getElementById("titleInput").style.color = color;
+    }
+
+    function changeTeamTextColor(color) {
+      document.querySelectorAll(".team").forEach(el => el.style.color = color);
+    }
+
+    function changeScoreTextColor(color) {
+      document.querySelectorAll(".score").forEach(el => el.style.color = color);
+    }
+
+    function changeTimerTextColor(color) {
+      document.getElementById("timer").style.color = color;
+    }
+
+    function changeBackgroundColor(color) {
+      document.getElementById("topContainer").style.backgroundColor = color;
+    }
+
+    function changeFontFamily(font) {
+      const targets = [
+        document.getElementById("titleInput"),
+        ...document.querySelectorAll(".team"),
+        ...document.querySelectorAll(".score"),
+        document.getElementById("timer")
+      ];
+      targets.forEach(el => el.style.fontFamily = font);
+    }
+
+    function toggleBold(id, checked) {
+      const el = document.getElementById(id);
+      el.classList.toggle("bold", checked);
+    }
+
+    function toggleBoldClass(className, checked) {
+      document.querySelectorAll("." + className).forEach(el => {
+        el.classList.toggle("bold", checked);
+      });
+    }
+
+    // 전체 굵게 토글
+    function toggleAllBold() {
+      const isBold = document.getElementById("boldToggle").checked;
+      toggleBold('titleInput', isBold);
+      toggleBoldClass('team', isBold);
+      toggleBoldClass('score', isBold);
+      toggleBold('timer', isBold);
+
+      // 각 개별 굵기 체크박스도 동기화 (전체 굵게 토글할 때)
+      document.getElementById("titleBold").checked = isBold;
+      document.getElementById("teamBold").checked = isBold;
+      document.getElementById("scoreBold").checked = isBold;
+      document.getElementById("timerBold").checked = isBold;
+    }
+
+    function resetAll() {
+      changeTitleFontSize(30);
+      changeTimerFontSize(30);
+      changeTeamFontSize(30);
+      changeScoreFontSize(30);
+      changeTeamTimerGap(30);
+      changeScoreTimerGap(0);
+      changeTitleScoreGap(30);
+
+      const defaultColor = "#000000";
+      changeAllTextColor(defaultColor);
+      document.getElementById("titleColorPicker").value = defaultColor;
+      document.getElementById("teamColorPicker").value = defaultColor;
+      document.getElementById("scoreColorPicker").value = defaultColor;
+      document.getElementById("timerColorPicker").value = defaultColor;
+      document.getElementById("allColorPicker").value = defaultColor;
+
+      changeBackgroundColor("#ffffff");
+      document.getElementById("bgColorPicker").value = "#ffffff";
+
+      document.getElementById("fontSelector").value = "Arial";
+      changeFontFamily("Arial");
+
+      // 개별 굵기 해제
+      document.getElementById("titleBold").checked = false;
+      document.getElementById("teamBold").checked = false;
+      document.getElementById("scoreBold").checked = false;
+      document.getElementById("timerBold").checked = false;
+      toggleBold("titleInput", false);
+      toggleBoldClass("team", false);
+      toggleBoldClass("score", false);
+      toggleBold("timer", false);
+
+      // 전체 굵기 해제
+      document.getElementById("boldToggle").checked = false;
+
+      resetTimer();
+    }
+
+    window.onload = resetAll;
   </script>
 </body>
 </html>
