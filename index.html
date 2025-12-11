@@ -157,6 +157,8 @@
     <button onclick="startTimer()">시작</button>
     <button onclick="stopTimer()">중지</button>
     <button onclick="resetTimer()">초기화</button>
+    <button onclick="increaseSeconds()">↑</button>
+    <button onclick="decreaseSeconds()">↓</button>
   </div>
 
   <div class="customization">
@@ -391,6 +393,18 @@
     document.getElementById("teamBold").checked = isBold;
     document.getElementById("scoreBold").checked = isBold;
     document.getElementById("timerBold").checked = isBold;
+  }
+
+  function increaseSeconds() {
+    totalSeconds++;
+    updateDisplay();
+  }
+
+  function decreaseSeconds() {
+    if (totalSeconds > 0) {
+      totalSeconds--;
+      updateDisplay();
+    }
   }
 
   function onAllTextColorChange(color) {
