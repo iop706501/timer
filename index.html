@@ -104,6 +104,14 @@
       background-color: #e0e0e0;
     }
 
+    /* 넷플릭스 모드 활성화 스타일 */
+    .netflix-active {
+      background-color: #E50914 !important; /* 넷플릭스 레드 */
+      color: white !important;
+      border: 1px solid #b20710 !important;
+      font-weight: bold;
+    }
+
     input[type="range"] {
       width: 200px;
     }
@@ -154,11 +162,13 @@
   <div class="controls">
     <label>분: <input type="number" id="inputMinutes" class="time" value="0" min="0"></label>
     <label>초: <input type="number" id="inputSeconds" class="time" value="0" min="0" max="59"></label>
+    <br><br>
     <button onclick="startTimer()">시작</button>
     <button onclick="stopTimer()">중지</button>
     <button onclick="resetTimer()">초기화</button>
     <button onclick="increaseSeconds()">↑</button>
     <button onclick="decreaseSeconds()">↓</button>
+    <button id="netflixBtn" onclick="toggleNetflixMode()">넷플릭스 모드</button>
   </div>
 
   <div class="customization">
@@ -257,6 +267,7 @@
 <script>
   let totalSeconds = 0;
   let timerInterval = null;
+  let isNetflixMode = false; // 넷플릭스 모드 상태 변수
 
   function updateDisplay() {
     const mins = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
@@ -264,15 +275,43 @@
     document.getElementById("timer").textContent = `${mins}:${secs}`;
   }
 
+  // 넷플릭스 모드 토글 함수
+  function toggleNetflixMode() {
+    isNetflixMode = !isNetflixMode;
+    const btn = document.getElementById("netflixBtn");
+    
+    if (isNetflixMode) {
+      btn.classList.add("netflix-active");
+    } else {
+      btn.classList.remove("netflix-active");
+    }
+  }
+
   function startTimer() {
     if (timerInterval !== null) return;
     const min = parseInt(document.getElementById("inputMinutes").value, 10) || 0;
     const sec = parseInt(document.getElementById("inputSeconds").value, 10) || 0;
+    
+    // 0초에서 시작할 때 입력값 적용
     if (totalSeconds === 0) totalSeconds = min * 60 + sec;
+    
     updateDisplay();
+    
     timerInterval = setInterval(() => {
-      totalSeconds++;
-      updateDisplay();
+      if (isNetflixMode) {
+        // 넷플릭스 모드: 시간 감소 (카운트다운)
+        if (totalSeconds > 0) {
+          totalSeconds--;
+          updateDisplay();
+        } else {
+          stopTimer();
+          // 시간이 0이 되면 종료
+        }
+      } else {
+        // 일반 모드: 시간 증가 (카운트업)
+        totalSeconds++;
+        updateDisplay();
+      }
     }, 1000);
   }
 
@@ -418,10 +457,9 @@
 
   // 설정 저장
   function saveSettings() {
-  // 알림 메시지 표시
-  if (document.getElementById("applyAllColor").checked) {
-    alert("'전체 글자 색상' 적용 체크한 상태에서 저장하시면\n불러오기 시에도 전체 색상만 적용이 됩니다.\n개별 색상 저장 및 불러오기를 원하시면 체크 해제해주세요.");
-  }
+    if (document.getElementById("applyAllColor").checked) {
+      alert("'전체 글자 색상' 적용 체크한 상태에서 저장하시면\n불러오기 시에도 전체 색상만 적용이 됩니다.\n개별 색상 저장 및 불러오기를 원하시면 체크 해제해주세요.");
+    }
     const settings = {
       title: document.getElementById("titleInput").value,
       team1: document.getElementById("team1").value,
@@ -455,7 +493,10 @@
       teamBold: document.getElementById("teamBold").checked,
       scoreBold: document.getElementById("scoreBold").checked,
       timerBold: document.getElementById("timerBold").checked,
-      allBold: document.getElementById("boldToggle").checked
+      allBold: document.getElementById("boldToggle").checked,
+      
+      // 넷플릭스 모드 상태 저장
+      netflixMode: isNetflixMode
     };
     localStorage.setItem("gameSettings", JSON.stringify(settings));
     alert("설정이 저장되었습니다.");
@@ -508,8 +549,8 @@
     document.getElementById("timerColorPicker").value = settings.timerColor;
     changeTimerTextColor(settings.timerColor);
 
-    document.getElementById("allColorPicker").value = settings.allColor || "#000000"; // 적용 버튼
-    document.getElementById("applyAllColor").checked = settings.applyAllColorChecked || false; // 적용 버튼 체크 여부 적용
+    document.getElementById("allColorPicker").value = settings.allColor || "#000000"; 
+    document.getElementById("applyAllColor").checked = settings.applyAllColorChecked || false; 
 
     if (settings.applyAllColorChecked) {
       changeAllTextColor(settings.allColor);
@@ -534,6 +575,15 @@
     toggleBoldClass('team', settings.teamBold);
     toggleBoldClass('score', settings.scoreBold);
     toggleBold('timer', settings.timerBold);
+
+    // 넷플릭스 모드 불러오기
+    if (settings.netflixMode) {
+       isNetflixMode = true;
+       document.getElementById("netflixBtn").classList.add("netflix-active");
+    } else {
+       isNetflixMode = false;
+       document.getElementById("netflixBtn").classList.remove("netflix-active");
+    }
   }
 
   function resetAll() {
@@ -570,6 +620,10 @@
     toggleBold("timer", false);
 
     document.getElementById("boldToggle").checked = false;
+
+    // 넷플릭스 모드 리셋
+    isNetflixMode = false;
+    document.getElementById("netflixBtn").classList.remove("netflix-active");
 
     resetTimer();
   }
