@@ -47,6 +47,8 @@
       font-size: 48px;
       min-width: 140px;
       text-align: center;
+      /* 숫자가 흔들리지 않게 고정폭 글꼴 권장 */
+      font-variant-numeric: tabular-nums; 
     }
 
     input[type="text"], input[type="number"] {
@@ -104,12 +106,20 @@
       background-color: #e0e0e0;
     }
 
-    /* 넷플릭스 모드 활성화 스타일 */
+    /* 넷플릭스 모드 활성화 스타일 (빨강) */
     .netflix-active {
-      background-color: #E50914 !important; /* 넷플릭스 레드 */
+      background-color: #E50914 !important; 
       color: white !important;
       border: 1px solid #b20710 !important;
       font-weight: bold;
+    }
+    
+    /* 시간 형식 버튼 활성화 스타일 (파랑) */
+    .format-active {
+        background-color: #0071eb !important;
+        color: white !important;
+        border: 1px solid #0056b3 !important;
+        font-weight: bold;
     }
 
     input[type="range"] {
@@ -160,6 +170,9 @@
   </div>
 
   <div class="controls">
+    <span id="hourInputContainer" style="display:none;">
+        <label>시: <input type="number" id="inputHours" class="time" value="0" min="0"></label>
+    </span>
     <label>분: <input type="number" id="inputMinutes" class="time" value="0" min="0"></label>
     <label>초: <input type="number" id="inputSeconds" class="time" value="0" min="0" max="59"></label>
     <br><br>
@@ -168,7 +181,9 @@
     <button onclick="resetTimer()">초기화</button>
     <button onclick="increaseSeconds()">↑</button>
     <button onclick="decreaseSeconds()">↓</button>
+    <br><br>
     <button id="netflixBtn" onclick="toggleNetflixMode()">넷플릭스 모드</button>
+    <button id="formatBtn" onclick="toggleTimeFormat()">시간 형식: H:MM:SS</button>
   </div>
 
   <div class="customization">
@@ -268,11 +283,30 @@
   let totalSeconds = 0;
   let timerInterval = null;
   let isNetflixMode = false; // 넷플릭스 모드 상태 변수
+  let isHourFormat = false;  // 시간 형식 활성화 여부
 
   function updateDisplay() {
-    const mins = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-    const secs = String(totalSeconds % 60).padStart(2, "0");
-    document.getElementById("timer").textContent = `${mins}:${secs}`;
+    let displayString = "";
+
+    // 시간 형식 버튼이 켜져있고(isHourFormat), 시간이 60분(3600초) 이상일 때만 H:MM:SS 표시
+    if (isHourFormat && totalSeconds >= 3600) {
+        // H:MM:SS 포맷
+        const hrs = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        
+        const hrsStr = String(hrs); // 시간은 0 패딩 제거
+        const minsStr = String(mins).padStart(2, "0");
+        const secsStr = String(secs).padStart(2, "0");
+        displayString = `${hrsStr}:${minsStr}:${secsStr}`;
+    } else {
+        // 그 외 (버튼 꺼짐 또는 버튼 켜져도 60분 미만) -> MM:SS 포맷
+        const mins = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+        const secs = String(totalSeconds % 60).padStart(2, "0");
+        displayString = `${mins}:${secs}`;
+    }
+    
+    document.getElementById("timer").textContent = displayString;
   }
 
   // 넷플릭스 모드 토글 함수
@@ -287,13 +321,36 @@
     }
   }
 
+  // 시간 형식 토글 함수
+  function toggleTimeFormat() {
+    isHourFormat = !isHourFormat;
+    const btn = document.getElementById("formatBtn");
+    const hourInputContainer = document.getElementById("hourInputContainer");
+
+    if (isHourFormat) {
+        // 활성화 (파란불 들어옴)
+        btn.classList.add("format-active");
+        // 시간 입력창은 버튼이 켜져있으면 항상 보이게 함 (MM:SS로 보일지라도 입력은 가능하게)
+        hourInputContainer.style.display = "inline"; 
+    } else {
+        // 비활성화 (디폴트 상태, 파란불 꺼짐)
+        btn.classList.remove("format-active");
+        hourInputContainer.style.display = "none";
+    }
+    updateDisplay();
+  }
+
   function startTimer() {
     if (timerInterval !== null) return;
+    
+    const hrs = parseInt(document.getElementById("inputHours").value, 10) || 0;
     const min = parseInt(document.getElementById("inputMinutes").value, 10) || 0;
     const sec = parseInt(document.getElementById("inputSeconds").value, 10) || 0;
     
     // 0초에서 시작할 때 입력값 적용
-    if (totalSeconds === 0) totalSeconds = min * 60 + sec;
+    if (totalSeconds === 0) {
+        totalSeconds = (hrs * 3600) + (min * 60) + sec;
+    }
     
     updateDisplay();
     
@@ -467,6 +524,8 @@
       score1: document.getElementById("score1").value,
       score2: document.getElementById("score2").value,
       timer: document.getElementById("timer").textContent,
+      
+      inputHours: document.getElementById("inputHours").value,
       inputMinutes: document.getElementById("inputMinutes").value,
       inputSeconds: document.getElementById("inputSeconds").value,
 
@@ -496,7 +555,9 @@
       allBold: document.getElementById("boldToggle").checked,
       
       // 넷플릭스 모드 상태 저장
-      netflixMode: isNetflixMode
+      netflixMode: isNetflixMode,
+      // 시간 형식 상태 저장
+      hourFormat: isHourFormat
     };
     localStorage.setItem("gameSettings", JSON.stringify(settings));
     alert("설정이 저장되었습니다.");
@@ -516,6 +577,8 @@
     document.getElementById("score1").value = settings.score1 || "";
     document.getElementById("score2").value = settings.score2 || "";
     document.getElementById("timer").textContent = settings.timer || "00:00";
+    
+    document.getElementById("inputHours").value = settings.inputHours || 0;
     document.getElementById("inputMinutes").value = settings.inputMinutes || 0;
     document.getElementById("inputSeconds").value = settings.inputSeconds || 0;
 
@@ -584,6 +647,21 @@
        isNetflixMode = false;
        document.getElementById("netflixBtn").classList.remove("netflix-active");
     }
+
+    // 시간 형식 불러오기
+    isHourFormat = !!settings.hourFormat; 
+    const formatBtn = document.getElementById("formatBtn");
+    const hourContainer = document.getElementById("hourInputContainer");
+    
+    if (isHourFormat) {
+        // Active
+        formatBtn.classList.add("format-active");
+        hourContainer.style.display = "inline";
+    } else {
+        // Inactive
+        formatBtn.classList.remove("format-active");
+        hourContainer.style.display = "none";
+    }
   }
 
   function resetAll() {
@@ -624,6 +702,13 @@
     // 넷플릭스 모드 리셋
     isNetflixMode = false;
     document.getElementById("netflixBtn").classList.remove("netflix-active");
+
+    // 시간 형식 리셋 (MM:SS로)
+    isHourFormat = false;
+    const formatBtn = document.getElementById("formatBtn");
+    formatBtn.classList.remove("format-active"); 
+    document.getElementById("hourInputContainer").style.display = "none";
+    document.getElementById("inputHours").value = 0;
 
     resetTimer();
   }
